@@ -1,0 +1,6 @@
+torch
+torchvision
+timm
+h5py
+scipy
+scikit-learn
