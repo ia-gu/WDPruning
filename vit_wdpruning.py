@@ -64,7 +64,7 @@ def _cfg(url='', **kwargs):
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.,
-                 fc_pruning=True):
+                fc_pruning=True):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -94,7 +94,7 @@ class Mlp(nn.Module):
 
 class Attention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,
-                 head_pruning=True,fc_pruning=True):
+                head_pruning=True,fc_pruning=True):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
@@ -309,13 +309,14 @@ class VisionTransformerWithWDPruning(nn.Module):
     """ Transformer-based Object Re-Identification
     """
     def __init__(self, img_size=224, patch_size=16, stride_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
-                 num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, representation_size=None, distilled=False,
-                 drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1, hybrid_backbone=None, norm_layer=nn.LayerNorm,
-                 head_pruning=True,fc_pruning=True,classifiers=[3,7],
-                 classifier_choose=None):
+                num_heads=12, mlp_ratio=4., qkv_bias=True, qk_scale=None, representation_size=None, distilled=False,
+                drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1, hybrid_backbone=None, norm_layer=nn.LayerNorm,
+                head_pruning=True,fc_pruning=True,classifiers=[3,7],
+                classifier_choose=None):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
+        # ↓蒸留トークン
         self.num_tokens = 2 if distilled else 1
         if hybrid_backbone is not None:
             self.patch_embed = HybridEmbed(
@@ -331,7 +332,6 @@ class VisionTransformerWithWDPruning(nn.Module):
         self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
         self.dist_token = nn.Parameter(torch.zeros(1, 1, embed_dim)) if distilled else None
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches + self.num_tokens, embed_dim))
-
 
         print('using drop_out rate is : {}'.format(drop_rate))
         print('using attn_drop_out rate is : {}'.format(attn_drop_rate))
@@ -373,6 +373,7 @@ class VisionTransformerWithWDPruning(nn.Module):
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
         self.head_classifier = nn.ModuleList([nn.Linear(self.num_features, num_classes) for _ in range(len(classifiers))])
 
+        # Classifier head for distillation token
         self.head_dist = None
         if distilled:
             self.head_dist = nn.Linear(self.embed_dim, self.num_classes) if num_classes > 0 else nn.Identity()
@@ -483,7 +484,7 @@ class VisionTransformerWithWDPruning(nn.Module):
 
     def LayerPruningAndLoadParams(self,dir):
 
-        param_dict = torch.load(dir)['model']
+        param_dict = torch.load(dir, map_location=torch.device('cpu'))['model']
         if self.classifier_choose != 12:
             for i in param_dict:
                 if 'block' in i:
