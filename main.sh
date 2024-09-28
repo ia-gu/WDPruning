@@ -5,4 +5,4 @@ python main_wdpruning.py \
     --output_dir logs/cifar100 \
     --epochs 500 \
     --classifiers 10 \
-    --R_threshold 0.1 \
+    --R_threshold 0.001 \

@@ -108,7 +108,7 @@ def main():
     parser.add_argument('--arch', default='deit_small', type=str)
     parser.add_argument("--pretrained_dir", type=str, default="checkpoint/ViT-B_16.npz", help="Where to search for pretrained ViT models.")
     parser.add_argument('--data-path', default='./data', type=str)
-    parser.add_argument('--data-set', default='CIFAR10', choices=['CIFAR', 'CIFAR10', 'IMNET', 'INAT', 'INAT19'], type=str, help='Image Net dataset path')
+    parser.add_argument('--data-set', default='CIFAR10', choices=['CIFAR10', 'CIFAR100', 'IMNET', 'INAT', 'INAT19'], type=str, help='Image Net dataset path')
     parser.add_argument("--img_size", default=224, type=int)
     parser.add_argument("--batch_size", default=1024, type=int)
     parser.add_argument("--eval_batch_size", default=512, type=int)
