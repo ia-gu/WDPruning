@@ -88,16 +88,14 @@ def get_args_parser():
     parser.add_argument('--distillation-tau', default=1.0, type=float)
     # Dataset parameters
     parser.add_argument('--data-path', default='', type=str)
-    parser.add_argument('--data-set', default='IMNET', choices=['CIFAR100','CIFAR10', 'IMNET', 'INAT', 'INAT19'], type=str)
+    parser.add_argument('--data-set', default='IMNET', choices=['CIFAR100','CIFAR10', 'IMNET', 'TINY', 'INAT', 'INAT19'], type=str)
     parser.add_argument('--inat-category', default='name', choices=['kingdom', 'phylum', 'class', 'order', 'supercategory', 'family', 'genus', 'name'], type=str, help='semantic granularity')
     parser.add_argument('--output_dir', default='', help='path where to save, empty for no saving')
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
     parser.set_defaults(pin_mem=True)
 
     parser.add_argument("--R_threshold", default=0.5, type=float, help="The predefined pruning ratio (for scheduling).")
-    parser.add_argument("--save_epoch", default=0, type=int, help="Step of training to perform learning rate warmup for.")
     parser.add_argument("--classifiers", type=int, nargs='+', default=[], help="The classifiers.")
     return parser
 
@@ -157,7 +155,7 @@ def main(args):
     print(args)
     output_dir = Path(args.output_dir)
     if args.output_dir and utils.is_main_process():
-        with (output_dir / "log.txt").open("a") as f:
+        with (output_dir / "train_log.txt").open("a") as f:
             f.write(str(args) + "\n")
 
 
@@ -295,19 +293,6 @@ def main(args):
         criterion, model, R_threshold=args.R_threshold
     )
 
-    if args.resume:
-        checkpoint = torch.load(args.resume, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
-        if 'optimizer' in checkpoint and 'epoch' in checkpoint:# and 'lr_scheduler' in checkpoint:
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-            args.start_epoch = checkpoint['epoch'] + 1
-            if args.model_ema:
-                utils._load_checkpoint_for_ema(model_ema, checkpoint['model_ema'])
-            if 'scaler' in checkpoint:
-                loss_scaler.load_state_dict(checkpoint['scaler'])
-
-
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy = 0.0
@@ -350,7 +335,7 @@ def main(args):
                      'n_parameters': n_parameters}
 
         if args.output_dir and utils.is_main_process():
-            with (output_dir / "log.txt").open("a") as f:
+            with (output_dir / "train_log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
 

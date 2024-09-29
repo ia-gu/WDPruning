@@ -10,6 +10,7 @@ import time
 
 import torch
 import torch.nn as nn
+from pathlib import Path
 
 from vit_wdpruning import VisionTransformerWithWDPruning
 from engine import evaluate_classifiers
@@ -108,7 +109,7 @@ def main():
     parser.add_argument('--arch', default='deit_small', type=str)
     parser.add_argument("--pretrained_dir", type=str, default="checkpoint/ViT-B_16.npz", help="Where to search for pretrained ViT models.")
     parser.add_argument('--data-path', default='./data', type=str)
-    parser.add_argument('--data-set', default='CIFAR10', choices=['CIFAR10', 'CIFAR100', 'IMNET', 'INAT', 'INAT19'], type=str, help='Image Net dataset path')
+    parser.add_argument('--data-set', default='CIFAR10', choices=['CIFAR10', 'CIFAR100', 'IMNET', 'TINY', 'INAT', 'INAT19'], type=str, help='Image Net dataset path')
     parser.add_argument("--img_size", default=224, type=int)
     parser.add_argument("--batch_size", default=1024, type=int)
     parser.add_argument("--eval_batch_size", default=512, type=int)
@@ -118,14 +119,21 @@ def main():
     parser.add_argument('--distill', action='store_true', default=False, help='Enabling distributed evaluation')
     parser.add_argument("--classifiers", type=int, nargs='+', default=[8,10])
     parser.add_argument("--classifier_choose", default=12, type=int)
+    parser.add_argument('--output_dir', default='', help='path where to save, empty for no saving')
     args = parser.parse_args()
     set_seed(args)
     device = torch.device("cuda")
     args.device = device
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S', level=logging.INFO)
 
+    output_dir = Path(args.output_dir)
+    if args.output_dir:
+        with (output_dir / "test_log.txt").open("a") as f:
+            f.write(str(args) + "\n")
+
     if args.data_set == 'CIFAR10': args.nb_classes = 10
     elif args.data_set == 'CIFAR100': args.nb_classes = 100
+    elif args.data_set == 'TINY': args.nb_classes = 200
     else: args.nb_classes = 1000
 
     if args.arch == 'deit_small':
@@ -184,6 +192,18 @@ def main():
     print(f"{num_runs/total_time * args.batch_size} Images / s")
     print(f"{total_time/num_runs/args.batch_size * 1000} ms / Images ")
     print('*' * 100)
+    if args.output_dir:
+        with open(args.output_dir + "/test_log.txt", "a") as f:
+            f.write("Total Parameter of original model: \t%2.1fM" % (num_params/1000000))
+            f.write('Num of Parameters: ', total_num_params)
+            f.write('*' * 100 + '\n')
+            f.write('Num of Parameters: ' + str(total_num_params) + '\n')
+            f.write(
+                f'Remaining Parameters as compared to baseline: {(total_num_params/num_params*100):.2f}%\n')
+            f.write(f"{num_runs/total_time * args.batch_size} Images / s\n")
+            f.write(f"{total_time/num_runs/args.batch_size * 1000} ms / Images \n")
+            f.write('*' * 100 + '\n')
+
 
     if args.eval:
         dataset_val, _ = build_dataset(is_train=False, args=args)
@@ -196,7 +216,7 @@ def main():
             pin_memory=True,
             drop_last=False
         )
-        evaluate(data_loader_val, model, device)
+        evaluate(data_loader_val, model, device, args)
 
 if __name__ == "__main__":
     main()
