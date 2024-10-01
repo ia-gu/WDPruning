@@ -97,10 +97,9 @@ def evaluate(data_loader, model, device, args):
     metric_logger.synchronize_between_processes()
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
-    if args.output_dir:
-        with open(args.output_dir + "/test_log.txt", "a") as f:
-            f.write('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}\n'
-                    .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
+    with open(args.pretrained_dir.replace('checkpoint.pth', 'test_log.txt'), "a") as f:
+        f.write('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}\n'
+                .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 

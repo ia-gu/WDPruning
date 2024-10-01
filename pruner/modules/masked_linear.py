@@ -99,6 +99,7 @@ class MaskedLinear(nn.Linear):
             retmask_tmp = retmask_tmp.repeat_interleave(64).unsqueeze(1).view(-1)
             retmask = torch.ones_like(retmask_tmp).type('torch.BoolTensor').view(-1)
             retmask = torch.logical_and(retmask_tmp, retmask)
+
         if not self.fc_pruning:
             mask = torch.ones_like(self.weight[:, 0])
 

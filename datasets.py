@@ -147,6 +147,7 @@ def build_dataset(is_train, args, infer_no_resize=False):
         dataset = INatDataset(args.data_path, train=is_train, year=2019,
                               category=args.inat_category, transform=transform)
         nb_classes = dataset.nb_classes
+    print(args.data_set, nb_classes)
 
     return dataset, nb_classes
 

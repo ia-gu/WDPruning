@@ -21,7 +21,6 @@ from timm.utils import NativeScaler, get_state_dict, ModelEma
 from datasets import build_dataset
 from engine import train_one_epoch, evaluate_classifiers
 from losses import LossWithClassifierAndPruning
-from samplers import RASampler
 
 import utils
 from vit_wdpruning import VisionTransformerWithWDPruning,_cfg, checkpoint_filter_fn
@@ -166,26 +165,28 @@ def main(args):
     random.seed(seed)
     cudnn.deterministic = True
     cudnn.benchmark = False
+    generator = torch.Generator()
+    generator.manual_seed(seed)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
     dataset_val, _ = build_dataset(is_train=False, args=args)
-
-    sampler_train = torch.utils.data.RandomSampler(dataset_train)
-    sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-
+    
     data_loader_train = torch.utils.data.DataLoader(
-        dataset_train, sampler=sampler_train,
+        dataset_train,
         batch_size=args.batch_size,
         num_workers=2,
+        shuffle=True,
         pin_memory=True,
         drop_last=True,
+        generator=generator
     )
 
     data_loader_val = torch.utils.data.DataLoader(
-        dataset_val, sampler=sampler_val,
+        dataset_val,
         batch_size=int(1.5 * args.batch_size),
         num_workers=2,
+        shuffle=False,
         pin_memory=True,
         drop_last=False
     )
@@ -218,16 +219,15 @@ def main(args):
         print('# missing keys=', missing_keys)
         print('# unexpected keys=', unexpected_keys)
         print('sucessfully loaded from pre-trained weights:', model_path)
-
-    elif 'CIFAR' in args.data_set:
+    # DeiTはImageNet学習済みなので，ヘッドのサイズが異なる場合は↓
+    else:
         param_dict = torch.load(model_path, map_location="cpu")['model']
         for i in param_dict:
             if 'threshold' not in i and 'mask_scores' not in i and 'head' not in i:
-                try:
-                    model.state_dict()[i.replace('module.', '')].copy_(param_dict[i])
-                except:
-                    # import pdb; pdb.set_trace()
-                    model.state_dict()[i.replace('module.', '')][0][:-1].copy_(param_dict[i][0])
+                # try:
+                model.state_dict()[i.replace('module.', '')].copy_(param_dict[i])
+                # except:
+                    # model.state_dict()[i.replace('module.', '')][0][:-1].copy_(param_dict[i][0])
 
     teacher_model = None
     if args.distill and 'IMNET' in args.data_set:
