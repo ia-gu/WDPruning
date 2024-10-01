@@ -13,7 +13,7 @@ from vit_wdpruning import VisionTransformerWithWDPruning
 from engine import evaluate_classifiers
 from tqdm import tqdm
 
-from datasets import build_dataset
+from datasets import build_test_dataset
 from engine import evaluate
 
 logger = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ def main():
 
 
     if args.eval:
-        dataset_val, _ = build_dataset(is_train=False, args=args)
+        dataset_val, _ = build_test_dataset(is_train=False, args=args)
 
         data_loader_val = torch.utils.data.DataLoader(
             dataset_val,

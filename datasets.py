@@ -151,6 +151,42 @@ def build_dataset(is_train, args, infer_no_resize=False):
 
     return dataset, nb_classes
 
+def build_test_dataset(args, infer_no_resize=False):
+    transform = build_transform(False, args, infer_no_resize)
+
+    if args.data_set == 'CIFAR100':
+        dataset = datasets.CIFAR100(args.data_path, train=False, transform=transform, download=True)
+        nb_classes = 100
+    elif args.data_set == 'CIFAR10':
+        dataset = datasets.CIFAR10(args.data_path, train=False, transform=transform, download=True)
+        nb_classes = 10
+    elif args.data_set == 'CARS':
+        dataset = CarsDataset(args.data_path, train=False, transform=transform)
+        nb_classes = 196
+    elif args.data_set == 'FLOWERS':
+        root = os.path.join(args.data_path, 'test')
+        dataset = datasets.ImageFolder(root, transform=transform)
+        nb_classes = 102
+    elif args.data_set == 'IMNET':
+        root = os.path.join(args.data_path, 'test')
+        dataset = datasets.ImageFolder(root, transform=transform)
+        nb_classes = 1000
+    elif args.data_set == 'TINY':
+        root = os.path.join(args.data_path,'test')
+        dataset = datasets.ImageFolder(root, transform=transform)
+        nb_classes = 200
+    elif args.data_set == 'INAT':
+        dataset = INatDataset(args.data_path, train=False, year=2018,
+                              category=args.inat_category, transform=transform)
+        nb_classes = dataset.nb_classes
+    elif args.data_set == 'INAT19':
+        dataset = INatDataset(args.data_path, train=False, year=2019,
+                              category=args.inat_category, transform=transform)
+        nb_classes = dataset.nb_classes
+    print(args.data_set, nb_classes)
+
+    return dataset, nb_classes
+
 
 def build_transform(is_train, args, infer_no_resize=False):
     if hasattr(args, 'arch'):
