@@ -172,7 +172,8 @@ def build_test_dataset(args, infer_no_resize=False):
         dataset = datasets.ImageFolder(root, transform=transform)
         nb_classes = 1000
     elif args.data_set == 'TINY':
-        root = os.path.join(args.data_path,'test')
+        # HACK 'test'のアノテーションが見つからない
+        root = os.path.join(args.data_path,'val')
         dataset = datasets.ImageFolder(root, transform=transform)
         nb_classes = 200
     elif args.data_set == 'INAT':

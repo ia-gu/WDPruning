@@ -198,7 +198,7 @@ def main():
 
 
     if args.eval:
-        dataset_val, _ = build_test_dataset(is_train=False, args=args)
+        dataset_val, _ = build_test_dataset(args=args)
 
         data_loader_val = torch.utils.data.DataLoader(
             dataset_val,
